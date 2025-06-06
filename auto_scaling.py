@@ -48,6 +48,7 @@ class AutoScaler:
         self.monitor = SystemMonitor()
         self.config = ConfigManager()
         self.observer = Observer()
+        self.current_agents = 1  # Track the number of active agent instances
         self.setup_file_watcher()
     
     def setup_file_watcher(self):
@@ -85,12 +86,25 @@ class AutoScaler:
     def scale_resources(self):
         if self.should_scale():
             logger.info("Scaling resources...")
-            # Implement scaling logic here
-            # This could involve:
-            # 1. Creating new agent instances
-            # 2. Adjusting resource allocations
-            # 3. Modifying the agent graph
-            pass
+            try:
+                if self.current_agents < self.config.config.get("max_agents", 1):
+                    self.current_agents += 1
+                    logger.info(f"Spawned new agent instance. Total agents: {self.current_agents}")
+                    # TODO: integrate with agent graph to actually launch the agent
+                else:
+                    logger.warning("Maximum agent count reached. Cannot scale up further.")
+            except Exception as e:
+                logger.error(f"Failed to scale up resources: {e}")
+        else:
+            # Scale down when resources are underutilized
+            metrics = self.monitor.metrics
+            try:
+                if self.current_agents > 1 and metrics["cpu_usage"] < self.config.config["auto_scale_threshold"] / 2 and metrics["memory_usage"] < self.config.config["auto_scale_threshold"] / 2:
+                    self.current_agents -= 1
+                    logger.info(f"Removed an agent instance. Total agents: {self.current_agents}")
+                    # TODO: integrate with agent graph to remove the agent
+            except Exception as e:
+                logger.error(f"Failed to scale down resources: {e}")
     
     def cleanup(self):
         self.observer.stop()

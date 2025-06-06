@@ -22,11 +22,6 @@ class BaseAgent:
         """Base run method to be implemented by subclasses."""
         raise NotImplementedError
 
-AGENT_REGISTRY = {
-    "worker": WorkerAgent,
-    "qa": QAAgent,
-    # Add more agents here as needed
-}
 
 class CEOAgent(BaseAgent):
     """CEO agent that makes strategic decisions and dynamic routing in natural language."""
@@ -236,4 +231,12 @@ Remember: You are an autonomous agent. Don't just review - think deeply, identif
                 "message": state["message"],
                 "status": "error",
                 "feedback": f"Error in Reflection processing: {str(e)}"
-            } 
+            }
+
+# Registry of available agents. Defined after all agent classes to
+# avoid NameError during module import.
+AGENT_REGISTRY = {
+    "worker": WorkerAgent,
+    "qa": QAAgent,
+    # Add more agents here as needed
+}
