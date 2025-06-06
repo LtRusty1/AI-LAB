@@ -2,7 +2,6 @@ import streamlit as st
 from pipeline_graph import create_agent_graph, AgentState
 import time
 from visualization import AgentVisualizer
-import threading
 
 # Configure Streamlit page
 st.set_page_config(
@@ -21,18 +20,10 @@ if 'animation_running' not in st.session_state:
     st.session_state.animation_running = False
 if 'current_frame' not in st.session_state:
     st.session_state.current_frame = 0
-if 'llm_result' not in st.session_state:
-    st.session_state.llm_result = None
-if 'llm_processing' not in st.session_state:
-    st.session_state.llm_processing = False
-if 'llm_thread' not in st.session_state:
-    st.session_state.llm_thread = None
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'last_transitions' not in st.session_state:
     st.session_state.last_transitions = []
-if 'llm_thread_result' not in st.session_state:
-    st.session_state.llm_thread_result = None
 
 st.title("🤖 AI-Lab Agent Pipeline")
 
@@ -50,11 +41,8 @@ with st.sidebar:
         st.session_state.animation_running = False
         st.session_state.visualizer = AgentVisualizer()
         st.session_state.current_frame = 0
-        st.session_state.llm_result = None
-        st.session_state.llm_processing = False
-        st.session_state.llm_thread = None
+        st.session_state.messages = []
         st.session_state.last_transitions = []
-        st.session_state.llm_thread_result = None
 
 # Main chat interface in the right column
 with col2:
@@ -70,60 +58,46 @@ with col2:
 
     # Chat input
     prompt = st.chat_input("What would you like to know?")
-    if prompt and not st.session_state.llm_processing:
+    if prompt:
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Prepare for LLM processing
-        st.session_state.llm_result = None
-        st.session_state.llm_processing = True
-        st.session_state.last_transitions = []
-        st.session_state.llm_thread_result = None
-
-        # Start LLM processing in a background thread
-        def llm_task(graph, prompt):
-            state = AgentState(
-                message=prompt,
-                status="pending",
-                feedback="",
-                transitions=[]  # Initialize transitions as empty list
-            )
-            result = graph.invoke(state)
-            # Only return the result, do not touch st.session_state
-            return {"feedback": result["feedback"], "transitions": result.get("transitions", [])}
-
-        def thread_wrapper(graph, prompt):
-            result = llm_task(graph, prompt)
-            st.session_state.llm_thread_result = result
-            st.session_state.llm_processing = False
-
-        thread = threading.Thread(target=thread_wrapper, args=(st.session_state.graph, prompt))
-        thread.start()
-        st.session_state.llm_thread = thread
-
-    # Check if thread has finished and update session state
-    if st.session_state.llm_thread_result is not None:
-        st.session_state.llm_result = st.session_state.llm_thread_result["feedback"]
-        st.session_state.last_transitions = st.session_state.llm_thread_result["transitions"]
-        st.session_state.llm_thread_result = None
-        # Animate the real path after LLM finishes
-        if st.session_state.last_transitions:
-            flow_sequence = [[edge] for edge in st.session_state.last_transitions]
-            st.session_state.visualizer.animate_flow(flow_sequence)
-            st.session_state.animation_running = True
-            st.session_state.current_frame = 0
-            st.session_state.last_transitions = []  # Clear to avoid re-triggering
-            st.experimental_rerun()
-
-    # Show LLM result if available
-    if st.session_state.llm_result:
+        # Process LLM request synchronously with loading indicator
         with st.chat_message("assistant"):
-            st.markdown(st.session_state.llm_result)
-        # Add assistant response to chat history if not already present
-        if not st.session_state.messages or st.session_state.messages[-1].get("role") != "assistant":
-            st.session_state.messages.append({"role": "assistant", "content": st.session_state.llm_result})
+            with st.spinner("Processing your request..."):
+                # Create agent state
+                state = AgentState(
+                    message=prompt,
+                    status="pending",
+                    feedback="",
+                    transitions=[]
+                )
+                
+                # Process through the agent pipeline
+                result = st.session_state.graph.invoke(state)
+                
+                # Extract results
+                feedback = result.get("feedback", "I apologize, but I couldn't process your request.")
+                transitions = result.get("transitions", [])
+                
+                # Display the response
+                st.markdown(feedback)
+                
+                # Store transitions for animation
+                st.session_state.last_transitions = transitions
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": feedback})
+                
+                # Trigger animation if there are transitions
+                if transitions:
+                    flow_sequence = [[edge] for edge in transitions]
+                    st.session_state.visualizer.animate_flow(flow_sequence)
+                    st.session_state.animation_running = True
+                    st.session_state.current_frame = 0
+                    st.rerun()
 
 # Agent Pipeline Visualization in the left column
 with col1:
@@ -140,7 +114,7 @@ with col1:
         animation_placeholder.plotly_chart(frame, use_container_width=True, config={'displayModeBar': False})
         st.session_state.current_frame = (st.session_state.current_frame + 1) % len(st.session_state.visualizer.animation_frames)
         time.sleep(0.1)
-        st.experimental_rerun()
+        st.rerun()
     
     # --- DEBUG: Show static org chart ---
     st.markdown("#### Static Organization Chart (Debug)")

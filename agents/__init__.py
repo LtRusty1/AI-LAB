@@ -2,11 +2,19 @@
 Basic agent implementations for the pipeline.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypedDict, Annotated, List, Tuple
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
 import logging
+
+# Type definition for agent state
+class AgentState(TypedDict):
+    """Type definition for the state passed between agents."""
+    message: Annotated[str, "message"]
+    status: Annotated[str, "status"]
+    feedback: Annotated[str, "feedback"]
+    transitions: Annotated[List[Tuple[str, str]], "transitions"]
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -240,3 +248,6 @@ AGENT_REGISTRY = {
     "qa": QAAgent,
     # Add more agents here as needed
 }
+
+# Export the classes for easy importing
+__all__ = ['AgentState', 'BaseAgent', 'CEOAgent', 'WorkerAgent', 'QAAgent', 'ReflectionAgent', 'AGENT_REGISTRY']
