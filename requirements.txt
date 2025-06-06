@@ -1,0 +1,11 @@
+autogen-agentchat
+autogen-core
+autogen-ext
+langchain>=0.1.0
+langchain-openai>=0.0.2
+langgraph>=0.0.10
+rich>=13.7.0
+typing-extensions>=4.9.0
+streamlit>=1.32.0
+plotly>=5.18.0
+networkx>=3.2.1 
