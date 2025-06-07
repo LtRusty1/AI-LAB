@@ -1,0 +1,3 @@
+@echo off
+echo Starting AI-Lab...
+call start_ai_lab_complete.bat 

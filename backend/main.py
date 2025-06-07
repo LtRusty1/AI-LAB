@@ -33,8 +33,8 @@ app.add_middleware(
 conversation_manager = ConversationManager()
 
 # Initialize the agent graph with conversation manager
-graph = create_agent_graph(conversation_manager=conversation_manager)
-compiled_graph = graph.compile()
+pipeline_graph = create_agent_graph(conversation_manager=conversation_manager)
+compiled_graph = pipeline_graph.graph.compile()
 
 # State management
 STATE_DIR = Path("states")
@@ -101,12 +101,40 @@ async def chat_endpoint(chat: ChatRequest):
         # Process through agent pipeline
         result = compiled_graph.invoke(state)
         
+        # Handle LangGraph return value (could be AddableValuesDict)
+        if hasattr(result, '__dict__'):
+            # If it's an object with attributes, convert to our AgentState
+            if hasattr(result, 'message'):
+                result_state = result
+            else:
+                # If it doesn't have the expected attributes, check the dict values
+                result_dict = dict(result) if hasattr(result, 'keys') else {}
+                result_state = AgentState.from_dict(result_dict)
+        elif isinstance(result, dict):
+            # If it's a dictionary, convert to AgentState
+            result_state = AgentState.from_dict(result)
+        else:
+            # Fallback for unexpected types
+            result_state = AgentState(
+                message=chat.message,
+                status="error", 
+                feedback="Unexpected result type from agent pipeline",
+                thought_process="Error: Pipeline returned unexpected type",
+                session_id=session_id
+            )
+        
         # Save updated state
-        save_state(session_id, result)
+        save_state(session_id, {
+            "message": result_state.message,
+            "status": result_state.status,
+            "feedback": result_state.feedback,
+            "thought_process": result_state.thought_process,
+            "session_id": result_state.session_id
+        })
         
         # Prepare response
-        response = result["feedback"]
-        thought_process = result.get("thought_process", "")
+        response = result_state.feedback
+        thought_process = result_state.thought_process
         
         logger.info(f"Sending response: {response}")
         return ChatResponse(
@@ -118,7 +146,12 @@ async def chat_endpoint(chat: ChatRequest):
         
     except Exception as e:
         logger.error(f"Error processing chat request: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return ChatResponse(
+            response="Sorry, there was an error processing your request. Please try again.",
+            status="error",
+            error=str(e),
+            session_id=session_id if 'session_id' in locals() else None
+        )
 
 @app.get("/conversation/{session_id}")
 async def get_conversation(session_id: str):
