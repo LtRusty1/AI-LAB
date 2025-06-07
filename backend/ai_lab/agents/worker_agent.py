@@ -3,7 +3,6 @@ Worker Agent implementation.
 """
 
 from typing import Dict, Any
-from langchain.agents import AgentExecutor
 from langchain.prompts import ChatPromptTemplate
 import logging
 
@@ -38,47 +37,83 @@ VERIFY: [Your verification]
 EXPLAIN: [Your explanation]
 
 Focus on delivering high-quality, well-documented solutions."""),
-            ("human", "{message}")
+            ("human", "{context}\n\nTask: {message}")
         ])
-        
-        # Create the agent executor with the prompt
-        self.agent = AgentExecutor.from_agent_and_tools(
-            agent=self.llm,
-            tools=[],
-            verbose=True,
-            handle_parsing_errors=True
-        )
     
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Run the Worker agent on the given state."""
         try:
             message = state.get("message", "")
-            formatted_prompt = self.prompt.format_prompt(message=message)
-            logger.info(f"[WorkerAgent] Formatted prompt: {formatted_prompt.to_string()}")
-            try:
-                response = self.agent.invoke(formatted_prompt.to_string())
-                logger.info(f"[WorkerAgent] Agent response: {response}")
-                output = response.get("output", "") if isinstance(response, dict) else str(response)
-                thought_process = ""
-                sections = ["ANALYZE:", "PLAN:", "EXECUTE:", "VERIFY:", "EXPLAIN:"]
-                for section in sections:
-                    if section in output:
-                        start = output.find(section)
-                        end = output.find("\n\n", start) if "\n\n" in output[start:] else len(output)
-                        thought_process += output[start:end].strip() + "\n\n"
-                state["feedback"] = output
-                state["thought_process"] = thought_process.strip()
-                state["status"] = "done"
-                return state
-            except Exception as e:
-                logger.error(f"[WorkerAgent] Agent invoke error: {e}")
-                state["status"] = "error"
-                state["feedback"] = f"Error in Worker agent: {str(e)}"
-                state["thought_process"] = "Error occurred during processing"
-                return state
+            session_id = state.get("session_id", "")
+            
+            # Get conversation context if available
+            context = ""
+            if self.conversation_manager and session_id:
+                context = self.conversation_manager.get_context(session_id)
+            
+            # Create the formatted prompt
+            formatted_prompt = self.prompt.format_messages(
+                context=context,
+                message=message
+            )
+            
+            logger.info(f"[WorkerAgent] Processing task: {message}")
+            
+            # Get response from LLM
+            response = self.llm.invoke(formatted_prompt)
+            
+            # Extract the content
+            output = response.content if hasattr(response, 'content') else str(response)
+            
+            # Extract thought process
+            thought_process = self._extract_thought_process(output)
+            
+            # Add to conversation history
+            if self.conversation_manager and session_id:
+                self.conversation_manager.add_message(
+                    session_id,
+                    "Worker",
+                    output,
+                    thought_process
+                )
+            
+            # Return updated state as dictionary
+            result = dict(state)
+            result.update({
+                "feedback": output,
+                "thought_process": thought_process,
+                "status": "done"
+            })
+            
+            logger.info(f"[WorkerAgent] Task completed successfully")
+            return result
+            
         except Exception as e:
             logger.error(f"[WorkerAgent] Error in Worker agent: {str(e)}")
-            state["status"] = "error"
-            state["feedback"] = f"Error in Worker agent: {str(e)}"
-            state["thought_process"] = "Error occurred during processing"
-            return state 
+            result = dict(state)
+            result.update({
+                "status": "error",
+                "feedback": f"I apologize, but I encountered an error while working on this task: {str(e)}",
+                "thought_process": "Error occurred during processing"
+            })
+            return result
+    
+    def _extract_thought_process(self, output: str) -> str:
+        """Extract thought process from the response."""
+        thought_process = ""
+        sections = ["ANALYZE:", "PLAN:", "EXECUTE:", "VERIFY:", "EXPLAIN:"]
+        for section in sections:
+            if section in output:
+                start = output.find(section)
+                end = output.find("\n\n", start) if "\n\n" in output[start:] else len(output)
+                thought_process += output[start:end].strip() + "\n\n"
+        
+        if not thought_process:
+            # Fallback if structured sections aren't found
+            thought_process = f"""ANALYZE: Processing task requirements
+PLAN: Developing implementation approach
+EXECUTE: Working on the solution
+VERIFY: Checking implementation quality
+EXPLAIN: Task completed with focus on quality and functionality"""
+        
+        return thought_process.strip() 

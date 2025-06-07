@@ -1,0 +1,51 @@
+# AI-Lab System Configuration
+
+database:
+  url: "sqlite:///ai_lab.db"
+  pool_size: 5
+  max_overflow: 10
+  echo: false
+  pool_timeout: 30
+  pool_recycle: 3600
+
+redis:
+  url: "redis://localhost:6379"
+  password: null
+  db: 0
+  max_connections: 10
+  socket_timeout: 5
+  socket_connect_timeout: 5
+
+gpu:
+  enabled: true
+  device_id: 0
+  memory_limit: 7168  # 7GB limit for RTX 2070 Super (8GB total)
+  precision: "fp16"   # Use FP16 for better performance
+  batch_size: 32
+  num_workers: 4      # Optimal for RTX 2070 Super
+
+ollama:
+  base_url: "http://localhost:11434/v1"
+  model_name: "mistral"
+  temperature: 0.7
+  max_tokens: 2000
+  top_p: 0.9
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/ai_lab.log"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+security:
+  tls_enabled: false
+  cert_file: null
+  key_file: null
+  allowed_origins:
+    - "*"
+  jwt_secret: null
+  jwt_algorithm: "HS256"
+  jwt_expire_minutes: 60 
