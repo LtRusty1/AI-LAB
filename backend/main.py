@@ -176,4 +176,9 @@ async def clear_conversation(session_id: str):
 # Add health check endpoint
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "timestamp": time.time()} 
+    return {"status": "healthy", "timestamp": time.time()}
+
+if __name__ == "__main__":
+    import uvicorn
+    logger.info("Starting AI-Lab backend server with full agent pipeline...")
+    uvicorn.run(app, host="127.0.0.1", port=8001)

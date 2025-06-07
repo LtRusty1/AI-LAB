@@ -13,8 +13,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
+        height: '100vh',
         bgcolor: theme.palette.background.default,
+        overflow: 'hidden',
       }}
     >
       <Container
@@ -25,6 +26,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
+          overflow: 'auto',
+          height: '100%',
         }}
       >
         {children}

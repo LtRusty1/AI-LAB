@@ -151,9 +151,11 @@ function App() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
-      const response = await fetch('http://localhost:8001/chat', {
+      console.log('Sending request to backend...', { message: userMessage, session_id: sessionId });
+
+      const response = await fetch('http://127.0.0.1:8001/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,12 +168,14 @@ function App() {
       });
 
       clearTimeout(timeoutId);
+      console.log('Response received:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Parsed response data:', data);
       
       if (data.status === 'success') {
         // Add AI response to the chat
@@ -187,17 +191,23 @@ function App() {
         throw new Error(data.error || 'Failed to get response from AI');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Detailed error:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
       let errorMessage = 'Sorry, there was an error processing your request.';
       
       if (error.name === 'AbortError') {
         errorMessage = 'Request timed out. Please try again.';
+        console.log('Request was aborted due to timeout');
       } else if (error.message.includes('Failed to fetch')) {
         errorMessage = 'Could not connect to the backend server. Please make sure it is running on port 8001.';
+        console.log('Failed to fetch - network error');
       } else if (error.message.includes('HTTP error')) {
         errorMessage = `Server error: ${error.message}. Please check the backend logs.`;
+        console.log('HTTP error from server');
       } else {
         errorMessage = `Error: ${error.message}`;
+        console.log('Other error type');
       }
 
       const errorMsg = {
@@ -282,7 +292,6 @@ function App() {
                     'border-color': '#fff',
                     'transition-property': 'background-color, border-width, border-color',
                     'transition-duration': '300ms',
-                    'box-shadow': '0 4px 12px rgba(0, 255, 204, 0.3)',
                   }
                 },
                 {
@@ -355,7 +364,9 @@ function App() {
                 <div className="message loading">
                   <div className="message-content">
                     <strong>AI:</strong>
-                    <p>Processing your request...</p>
+                    <p>🤖 Processing your request through our agent pipeline...</p>
+                    <p><small>⏱️ This may take 1-3 minutes for complex responses</small></p>
+                    <p><small>📊 CEO → Worker → QA → Review cycle in progress</small></p>
                   </div>
                 </div>
               )}
