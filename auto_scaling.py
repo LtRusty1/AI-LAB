@@ -53,12 +53,16 @@ class AutoScaler:
     
     def setup_file_watcher(self):
         class ConfigHandler(FileSystemEventHandler):
+            def __init__(self, scaler):
+                super().__init__()
+                self.scaler = scaler
+
             def on_modified(self, event):
                 if event.src_path.endswith('agent_config.json'):
                     logger.info("Configuration file changed, reloading...")
-                    self.config.load_config()
-        
-        self.observer.schedule(ConfigHandler(), path='.', recursive=False)
+                    self.scaler.config.load_config()
+
+        self.observer.schedule(ConfigHandler(self), path='.', recursive=False)
         self.observer.start()
     
     def should_scale(self) -> bool:
