@@ -23,7 +23,12 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
-import { fetchAgents } from '../store/slices/agentSlice';
+import {
+  fetchAgents,
+  startAgent,
+  stopAgent,
+  restartAgent,
+} from '../store/slices/agentSlice';
 
 const Agents: React.FC = () => {
   const dispatch = useDispatch();
@@ -36,18 +41,15 @@ const Agents: React.FC = () => {
   }, [dispatch]);
 
   const handleStartAgent = (agentId: string) => {
-    // TODO: Implement agent start
-    console.log('Start agent:', agentId);
+    dispatch(startAgent(agentId));
   };
 
   const handleStopAgent = (agentId: string) => {
-    // TODO: Implement agent stop
-    console.log('Stop agent:', agentId);
+    dispatch(stopAgent(agentId));
   };
 
   const handleRestartAgent = (agentId: string) => {
-    // TODO: Implement agent restart
-    console.log('Restart agent:', agentId);
+    dispatch(restartAgent(agentId));
   };
 
   const handleCreateAgent = () => {

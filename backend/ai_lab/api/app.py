@@ -211,4 +211,65 @@ async def get_messages(
         )
         return {"messages": [msg.model_dump() for msg in messages]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agents/{agent_id}/start")
+async def start_agent(agent_id: str):
+    """Start an agent by updating its state."""
+    try:
+        agent = await db_manager.get_agent_status(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        agent.state = AgentState.EXECUTING
+        agent.last_updated = datetime.utcnow()
+        await db_manager.update_agent_status(agent)
+
+        # TODO: Integrate with agent pipeline to actually start processing
+        return agent.model_dump()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agents/{agent_id}/stop")
+async def stop_agent(agent_id: str):
+    """Stop an agent by updating its state."""
+    try:
+        agent = await db_manager.get_agent_status(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        agent.state = AgentState.IDLE
+        agent.last_updated = datetime.utcnow()
+        await db_manager.update_agent_status(agent)
+
+        # TODO: Integrate with agent pipeline to actually stop processing
+        return agent.model_dump()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agents/{agent_id}/restart")
+async def restart_agent(agent_id: str):
+    """Restart an agent."""
+    try:
+        agent = await db_manager.get_agent_status(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        # Stop then start
+        agent.state = AgentState.EXECUTING
+        agent.last_updated = datetime.utcnow()
+        await db_manager.update_agent_status(agent)
+
+        # TODO: Integrate with agent pipeline for restart logic
+        return agent.model_dump()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

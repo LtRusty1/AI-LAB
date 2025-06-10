@@ -39,6 +39,30 @@ export const fetchAgent = createAsyncThunk(
   }
 );
 
+export const startAgent = createAsyncThunk(
+  'agents/startAgent',
+  async (agentId: string) => {
+    const response = await axios.post(`/api/agents/${agentId}/start`);
+    return response.data;
+  }
+);
+
+export const stopAgent = createAsyncThunk(
+  'agents/stopAgent',
+  async (agentId: string) => {
+    const response = await axios.post(`/api/agents/${agentId}/stop`);
+    return response.data;
+  }
+);
+
+export const restartAgent = createAsyncThunk(
+  'agents/restartAgent',
+  async (agentId: string) => {
+    const response = await axios.post(`/api/agents/${agentId}/restart`);
+    return response.data;
+  }
+);
+
 const agentSlice = createSlice({
   name: 'agents',
   initialState,
@@ -75,6 +99,33 @@ const agentSlice = createSlice({
       .addCase(fetchAgent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch agent';
+      })
+      .addCase(startAgent.fulfilled, (state, action) => {
+        const idx = state.agents.findIndex(a => a.id === action.payload.id);
+        if (idx !== -1) {
+          state.agents[idx] = { ...state.agents[idx], ...action.payload, status: action.payload.state } as Agent;
+        }
+        if (state.selectedAgent && state.selectedAgent.id === action.payload.id) {
+          state.selectedAgent = { ...state.selectedAgent, ...action.payload, status: action.payload.state } as Agent;
+        }
+      })
+      .addCase(stopAgent.fulfilled, (state, action) => {
+        const idx = state.agents.findIndex(a => a.id === action.payload.id);
+        if (idx !== -1) {
+          state.agents[idx] = { ...state.agents[idx], ...action.payload, status: action.payload.state } as Agent;
+        }
+        if (state.selectedAgent && state.selectedAgent.id === action.payload.id) {
+          state.selectedAgent = { ...state.selectedAgent, ...action.payload, status: action.payload.state } as Agent;
+        }
+      })
+      .addCase(restartAgent.fulfilled, (state, action) => {
+        const idx = state.agents.findIndex(a => a.id === action.payload.id);
+        if (idx !== -1) {
+          state.agents[idx] = { ...state.agents[idx], ...action.payload, status: action.payload.state } as Agent;
+        }
+        if (state.selectedAgent && state.selectedAgent.id === action.payload.id) {
+          state.selectedAgent = { ...state.selectedAgent, ...action.payload, status: action.payload.state } as Agent;
+        }
       });
   },
 });
