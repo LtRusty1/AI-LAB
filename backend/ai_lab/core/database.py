@@ -298,7 +298,8 @@ class DatabaseManager:
                 cutoff = datetime.utcnow().timestamp() - (max_age_hours * 3600)
                 
                 # Delete inactive agents (cascade will handle related records)
-                self._conn.execute("""
+                cursor = self._conn.execute(
+                    """
                     DELETE FROM agents
                     WHERE id IN (
                         SELECT a.id
@@ -307,9 +308,11 @@ class DatabaseManager:
                         WHERE s.last_updated < datetime(?, 'unixepoch')
                         OR s.last_updated IS NULL
                     )
-                """, (cutoff,))
-                
-                removed = self._conn.total_changes
+                    """,
+                    (cutoff,),
+                )
+
+                removed = cursor.rowcount
                 self._conn.commit()
                 return removed
                 
