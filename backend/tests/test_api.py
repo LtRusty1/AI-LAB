@@ -6,12 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 from ai_lab.api.app import app
 from ai_lab.models.base import AgentMessage, AgentStatus, AgentRole, AgentState
+from ai_lab.core.gpu_manager import GPUStats
 import uuid
 
 client = TestClient(app)
 
 def test_get_agents():
     """Test getting all agents."""
+    async def mock_get_all_agent_statuses():
+        return []
+
+    app.db_manager.get_all_agent_statuses = mock_get_all_agent_statuses
+
     response = client.get("/api/agents")
     assert response.status_code == 200
     assert "agents" in response.json()
@@ -28,8 +34,11 @@ def test_get_agent():
         current_task="testing"
     )
     
-    # Mock the database response
-    app.db_manager.get_agent_status = lambda x: agent if x == agent_id else None
+    # Mock the database response with async function
+    async def mock_get_agent_status(aid: str):
+        return agent if aid == agent_id else None
+
+    app.db_manager.get_agent_status = mock_get_agent_status
     
     # Test existing agent
     response = client.get(f"/api/agents/{agent_id}")
@@ -48,7 +57,12 @@ def test_send_message():
         content="Test message",
         message_type="text"
     )
-    
+
+    async def mock_publish(msg: AgentMessage):
+        return None
+
+    app.message_broker.publish = mock_publish
+
     response = client.post("/api/messages", json=message.model_dump())
     assert response.status_code == 200
     assert "message_id" in response.json()
@@ -56,9 +70,12 @@ def test_send_message():
 def test_get_messages():
     """Test getting message history."""
     agent_id = str(uuid.uuid4())
-    
+
     # Mock the message broker response
-    app.message_broker.get_message_history = lambda x, **kwargs: []
+    async def mock_get_message_history(aid: str, **kwargs):
+        return []
+
+    app.message_broker.get_message_history = mock_get_message_history
     
     response = client.get(f"/api/messages/{agent_id}")
     assert response.status_code == 200
@@ -66,6 +83,18 @@ def test_get_messages():
 
 def test_system_stats():
     """Test getting system statistics."""
+    async def mock_gpu_stats():
+        return GPUStats(
+            total_memory=0,
+            used_memory=0,
+            free_memory=0,
+            utilization=0.0,
+            temperature=0.0,
+            power_usage=0.0,
+        )
+
+    app.gpu_manager.get_stats = mock_gpu_stats
+
     response = client.get("/api/system/stats")
     assert response.status_code == 200
     assert "gpu" in response.json()
@@ -74,6 +103,11 @@ def test_system_stats():
 @pytest.mark.asyncio
 async def test_websocket_connection():
     """Test WebSocket connection and message handling."""
+    async def mock_publish(message: AgentMessage):
+        return None
+
+    app.message_broker.publish = mock_publish
+
     with client.websocket_connect("/ws/test-client") as websocket:
         # Test agent registration
         websocket.send_json({
