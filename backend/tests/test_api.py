@@ -5,7 +5,7 @@ Tests for the FastAPI application.
 import pytest
 from fastapi.testclient import TestClient
 from ai_lab.api.app import app
-from ai_lab.models.base import AgentMessage, AgentStatus
+from ai_lab.models.base import AgentMessage, AgentStatus, AgentRole, AgentState
 import uuid
 
 client = TestClient(app)
@@ -83,7 +83,7 @@ async def test_websocket_connection():
         response = websocket.receive_json()
         assert response["type"] == "registration_confirmed"
         assert response["agent_id"] == "test-agent"
-        
+
         # Test sending a message
         message = {
             "type": "agent_message",
@@ -92,8 +92,42 @@ async def test_websocket_connection():
             "message_type": "text"
         }
         websocket.send_json(message)
-        
+
         # The message should be broadcast back
         response = websocket.receive_json()
         assert response["type"] == "agent_message"
-        assert response["content"] == "Test message" 
+        assert response["content"] == "Test message"
+
+
+def test_agent_lifecycle():
+    """Test start, stop and restart endpoints."""
+    agent_id = str(uuid.uuid4())
+
+    agent = AgentStatus(
+        id=agent_id,
+        role=AgentRole.WORKER,
+        state=AgentState.IDLE,
+    )
+
+    async def get_status(aid: str):
+        return agent if aid == agent_id else None
+
+    async def update_status(status: AgentStatus):
+        agent.state = status.state
+
+    app.db_manager.get_agent_status = get_status
+    app.db_manager.update_agent_status = update_status
+
+    response = client.post(f"/api/agents/{agent_id}/start")
+    assert response.status_code == 200
+    assert response.json()["state"] == "executing"
+
+
+    response = client.post(f"/api/agents/{agent_id}/stop")
+    assert response.status_code == 200
+    assert response.json()["state"] == "idle"
+
+    response = client.post(f"/api/agents/{agent_id}/restart")
+    assert response.status_code == 200
+    assert response.json()["state"] == "executing"
+
