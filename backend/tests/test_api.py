@@ -33,6 +33,26 @@ sys.modules.setdefault("cupy", cupy_stub)
 numpy_stub = types.ModuleType("numpy")
 sys.modules.setdefault("numpy", numpy_stub)
 
+# Provide a stub for aioredis to avoid heavy dependencies
+aioredis_stub = types.ModuleType("aioredis")
+aioredis_stub.Redis = object
+aioredis_stub.from_url = lambda *a, **k: types.SimpleNamespace(
+    ping=lambda: None,
+    publish=lambda *a, **k: None,
+    setex=lambda *a, **k: None,
+    keys=lambda *a, **k: [],
+    get=lambda *a, **k: None,
+    delete=lambda *a, **k: None,
+    close=lambda: None,
+    pubsub=lambda: types.SimpleNamespace(
+        subscribe=lambda *a, **k: None,
+        unsubscribe=lambda *a, **k: None,
+        get_message=lambda *a, **k: None,
+        close=lambda: None,
+    ),
+)
+sys.modules.setdefault("aioredis", aioredis_stub)
+
 import ai_lab.api.app as api_app
 from ai_lab.api.app import app
 from ai_lab.models.base import (
@@ -45,6 +65,10 @@ from ai_lab.models.base import (
 
 # Ensure missing globals referenced in api_app are available during tests
 api_app.AgentState = AgentState
+
+# Disable startup and shutdown events to avoid external connections during tests
+app.router.on_startup.clear()
+app.router.on_shutdown.clear()
 
 client = TestClient(app)
 
