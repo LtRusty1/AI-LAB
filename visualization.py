@@ -39,14 +39,11 @@ class AgentVisualizer:
 
         edge_x = []
         edge_y = []
-        edge_colors = []
         for u, v in self.edges:
             x0, y0 = self.pos[u]
             x1, y1 = self.pos[v]
             edge_x += [x0, x1, None]
             edge_y += [y0, y1, None]
-            color = "red" if (u, v) in highlight else "gray"
-            edge_colors.append(color)
 
         edge_trace = go.Scatter(
             x=edge_x,
