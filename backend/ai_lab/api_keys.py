@@ -93,20 +93,14 @@ class APIKeyManager:
     
     async def test_api_key(self, service_name: str, api_key: str) -> Dict[str, any]:
         """Test if an API key is valid by making a test request."""
-        # This would implement actual API testing for each service
-        # For now, return a mock response
-        result = {
-            'service': service_name,
-            'valid': False,
-            'error': None,
-            'details': {}
-        }
-        
         try:
             # Format validation first
             if not await self.validate_api_key_format(service_name, api_key):
-                result['error'] = 'Invalid API key format'
-                return result
+                return {
+                    'success': False,
+                    'message': 'Invalid API key format',
+                    'service': service_name
+                }
             
             # Here you would implement actual API testing
             # For example, for OpenAI:
@@ -115,13 +109,18 @@ class APIKeyManager:
             #     pass
             
             # For now, assume format validation means it's valid
-            result['valid'] = True
-            result['details'] = {'message': 'API key format is valid'}
+            return {
+                'success': True,
+                'message': 'API key format is valid',
+                'service': service_name
+            }
             
         except Exception as e:
-            result['error'] = str(e)
-        
-        return result
+            return {
+                'success': False,
+                'message': str(e),
+                'service': service_name
+            }
 
 # Global API key manager instance
 api_key_manager = APIKeyManager() 

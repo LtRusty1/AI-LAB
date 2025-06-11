@@ -250,10 +250,19 @@ async def list_api_keys():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api-keys/{service_name}/test")
-async def test_api_key(service_name: str, request: APIKeyRequest):
-    """Test if an API key is valid."""
+async def test_api_key(service_name: str):
+    """Test if a stored API key is valid."""
     try:
-        result = await api_key_manager.test_api_key(service_name, request.api_key)
+        # Get the stored API key for this service
+        stored_api_key = await api_key_manager.get_api_key(service_name)
+        if not stored_api_key:
+            return {
+                "success": False,
+                "message": f"No API key found for service: {service_name}",
+                "service": service_name
+            }
+        
+        result = await api_key_manager.test_api_key(service_name, stored_api_key)
         return result
     except Exception as e:
         logger.error(f"Error testing API key: {e}")

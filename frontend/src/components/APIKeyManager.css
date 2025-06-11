@@ -1,0 +1,228 @@
+.api-key-manager {
+  background: rgba(30, 41, 59, 0.9);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #334155;
+}
+
+.api-key-manager h3 {
+  color: #00ffcc;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.api-key-manager h4 {
+  color: #94a3b8;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.add-key-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #334155;
+}
+
+.add-key-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-key-form select,
+.add-key-form input {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #e2e8f0;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.add-key-form select:focus,
+.add-key-form input:focus {
+  outline: none;
+  border-color: #00ffcc;
+  box-shadow: 0 0 0 2px rgba(0, 255, 204, 0.2);
+}
+
+.add-key-form button {
+  background: #00ffcc;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-key-form button:hover:not(:disabled) {
+  background: #00e5b8;
+  transform: translateY(-1px);
+}
+
+.add-key-form button:disabled {
+  background: #475569;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.configured-keys p {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.key-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.key-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.service-name {
+  color: #e2e8f0;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.key-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.key-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.key-actions button:first-child {
+  background: #3b82f6;
+  color: white;
+}
+
+.key-actions button:first-child:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.key-actions button:first-child:disabled {
+  background: #475569;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.remove-btn {
+  background: #ef4444 !important;
+  color: white !important;
+}
+
+.remove-btn:hover {
+  background: #dc2626 !important;
+}
+
+@media (max-width: 768px) {
+  .add-key-form {
+    flex-direction: column;
+  }
+  
+  .add-key-form select,
+  .add-key-form input {
+    min-width: 100%;
+  }
+  
+  .key-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .key-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Confirmation Dialog Styles */
+.confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirmation-dialog {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+.confirmation-dialog h4 {
+  color: #00ffcc;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.confirmation-dialog p {
+  color: #e2e8f0;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirmation-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
+}
+
+.cancel-btn {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+.cancel-btn:hover {
+  background: #64748b;
+} 
