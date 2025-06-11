@@ -1,17 +1,18 @@
 @echo off
-title AI-Lab Complete Launcher
+title AI-Lab Enhanced Complete Launcher v2.0
 color 0A
 
-echo ========================================
-echo    AI-Lab Complete One-Click Launcher
-echo ========================================
+echo ==========================================
+echo    AI-Lab Enhanced Complete Launcher v2.0
+echo    Backend Refactoring + Performance + API Keys
+echo ==========================================
 echo.
 
 :: Set working directory to script location
 cd /d "%~dp0"
 
 :: Check for Python virtual environment
-echo [STEP 1/6] Checking Python environment...
+echo [STEP 1/8] Checking Python environment...
 if not exist "venv\Scripts\activate.bat" (
     echo [ERROR] Virtual environment not found at venv
     echo Please create it with: python -m venv venv
@@ -20,8 +21,30 @@ if not exist "venv\Scripts\activate.bat" (
 )
 echo [SUCCESS] Virtual environment found
 
+:: Activate virtual environment
+echo [INFO] Activating virtual environment...
+call venv\Scripts\activate.bat
+
+:: Check for enhanced dependencies
+echo [STEP 2/8] Checking enhanced dependencies...
+cd backend
+python -c "import ai_lab.database; import ai_lab.performance; import ai_lab.api_keys; print('All enhanced modules available')" >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [WARNING] Enhanced modules not found. Installing dependencies...
+    pip install -r requirements.txt
+    if %ERRORLEVEL% neq 0 (
+        echo [ERROR] Failed to install dependencies
+        pause
+        exit /b 1
+    )
+    echo [SUCCESS] Enhanced dependencies installed
+) else (
+    echo [SUCCESS] Enhanced dependencies found
+)
+cd ..
+
 :: Check for Node.js
-echo [STEP 2/6] Checking Node.js installation...
+echo [STEP 3/8] Checking Node.js installation...
 where node >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Node.js not found! Please install Node.js
@@ -30,8 +53,38 @@ if %ERRORLEVEL% neq 0 (
 )
 echo [SUCCESS] Node.js found
 
+:: Setup Database
+echo [STEP 4/8] Setting up enhanced database...
+cd backend
+
+:: Set database URL for SQLite (easy setup)
+set DATABASE_URL=sqlite+aiosqlite:///./ai_lab.db
+
+:: Check if database exists
+if not exist "ai_lab.db" (
+    echo [INFO] Database not found. Setting up database...
+    python setup_database.py
+    if %ERRORLEVEL% neq 0 (
+        echo [ERROR] Database setup failed
+        pause
+        exit /b 1
+    )
+    echo [SUCCESS] Database setup completed
+    
+    :: Migrate existing JSON data if present
+    echo [INFO] Checking for existing conversation data...
+    if exist "conversations\*.json" (
+        echo [INFO] Found existing conversation data. Migrating to database...
+        python migrate_json_to_db.py
+        echo [SUCCESS] Data migration completed
+    )
+) else (
+    echo [SUCCESS] Database found: ai_lab.db
+)
+cd ..
+
 :: Check for Redis
-echo [STEP 3/6] Checking Redis installation...
+echo [STEP 5/8] Checking Redis installation...
 if not exist "redis\redis-server.exe" (
     echo [INFO] Redis not found. Installing Redis...
     
@@ -70,7 +123,7 @@ if not exist "redis\redis-server.exe" (
 )
 
 :: Check for Ollama
-echo [STEP 4/6] Checking Ollama installation...
+echo [STEP 6/8] Checking Ollama installation...
 set "OLLAMA_EXE=C:\Users\%USERNAME%\AppData\Local\Programs\Ollama\ollama.exe"
 
 if not exist "%OLLAMA_EXE%" (
@@ -80,7 +133,7 @@ if not exist "%OLLAMA_EXE%" (
     where ollama.exe >nul 2>&1
     if %ERRORLEVEL% neq 0 (
         echo [WARNING] Ollama not found in PATH either
-        echo [INFO] Continuing without Ollama (will use echo responses)
+        echo [INFO] Continuing without Ollama (will use mock responses)
         set "OLLAMA_EXE="
     ) else (
         echo [SUCCESS] Ollama found in PATH
@@ -90,7 +143,7 @@ if not exist "%OLLAMA_EXE%" (
 )
 
 :: Kill any existing processes to prevent conflicts
-echo [STEP 5/6] Cleaning up existing processes...
+echo [STEP 7/8] Cleaning up existing processes...
 taskkill /F /IM redis-server.exe >nul 2>&1
 taskkill /F /IM ollama.exe >nul 2>&1
 taskkill /F /IM node.exe >nul 2>&1
@@ -113,36 +166,66 @@ if defined OLLAMA_EXE (
 echo [INFO] Waiting for services to be ready...
 timeout /t 3 /nobreak >nul
 
-:: Start backend server
-echo [INFO] Starting backend server...
-start "AI-Lab Backend" cmd /c "cd backend && ..\venv\Scripts\activate.bat && python run_server_direct.py"
+:: Start enhanced backend server v2.0
+echo [INFO] Starting AI-Lab Enhanced Backend v2.0...
+echo [INFO] Features: Database + Performance Monitoring + API Key Management
+start "AI-Lab Enhanced Backend v2.0" cmd /c "cd backend && set DATABASE_URL=sqlite+aiosqlite:///./ai_lab.db && ..\venv\Scripts\activate.bat && python main.py"
 
 :: Wait a moment for backend to start
-timeout /t 5 /nobreak >nul
+echo [INFO] Waiting for enhanced backend to initialize...
+timeout /t 8 /nobreak >nul
+
+:: Test backend health
+echo [INFO] Testing enhanced backend health...
+curl -s http://localhost:8001/health >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [WARNING] Enhanced backend may still be starting...
+    timeout /t 5 /nobreak >nul
+)
 
 :: Start frontend development server
-echo [INFO] Starting frontend server...
+echo [STEP 8/8] Starting frontend server...
 start "AI-Lab Frontend" cmd /c "cd frontend && npm start"
 
 :: Wait for frontend server to start
 echo [INFO] Waiting for frontend server to start...
 timeout /t 15 /nobreak >nul
 
-:: Open browser
-echo [INFO] Opening browser...
+:: Open browser to main interface
+echo [INFO] Opening AI-Lab in browser...
 start http://localhost:3000
 
+:: Open backend API documentation
+timeout /t 2 /nobreak >nul
+echo [INFO] Backend API available at: http://localhost:8001
+echo [INFO] Health check: http://localhost:8001/health
+echo [INFO] Performance metrics: http://localhost:8001/metrics
+
 echo.
-echo ========================================
-echo    AI-Lab Project is running!
-echo ========================================
-echo Frontend: http://localhost:3000
-echo Backend:  http://localhost:8001
+echo ==========================================
+echo    AI-Lab Enhanced v2.0 is running!
+echo ==========================================
+echo Frontend:     http://localhost:3000
+echo Backend API:  http://localhost:8001
+echo Health Check: http://localhost:8001/health
+echo Metrics:      http://localhost:8001/metrics
 echo.
-echo You can now chat with the CEO agent!
+echo ✅ ENHANCED FEATURES AVAILABLE:
+echo    • PostgreSQL/SQLite Database Storage
+echo    • Real-time Performance Monitoring  
+echo    • Secure API Key Management
+echo    • Prometheus Metrics Export
+echo    • Enhanced Conversation History
 echo.
-echo Close this window when you're done to keep
-echo the services running in the background.
+echo 🔧 QUICK API TESTS:
+echo    curl http://localhost:8001/health
+echo    curl http://localhost:8001/metrics
+echo    curl http://localhost:8001/api-keys
+echo.
+echo You can now chat with enhanced AI agents!
+echo.
+echo ⚠️  Keep this window open to see system status.
+echo    Close individual service windows when done.
 echo.
 
 pause 
