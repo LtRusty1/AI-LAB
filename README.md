@@ -2,7 +2,6 @@
 
 ![AI-Lab](https://img.shields.io/badge/AI-Lab-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.10+-green.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 A comprehensive AI development environment featuring multi-agent systems, AutoGen integration, Ollama model deployment, and a modern web interface for building and testing AI applications.
 
@@ -36,10 +35,11 @@ AI-lab/
 │   └── public/              # Static assets
 ├── config/                    # Configuration files
 ├── docker/                    # Docker configurations
-├── scripts/                   # Utility scripts
-│   ├── configure_gpu.ps1    # GPU configuration
-│   ├── setup_efficient_model.ps1
-│   └── simple_gpu_setup.ps1
+├── configure_gpu.ps1          # GPU setup script (Windows)
+├── setup_efficient_model.ps1  # Lightweight model setup (Windows)
+├── simple_gpu_setup.ps1       # Simplified GPU configuration (Windows)
+├── start_ai_lab_complete.bat  # One-click launcher (Windows)
+├── install.sh                 # Ollama installer for Linux
 ├── app.py                     # Main application entry
 ├── agents.py                  # Agent orchestration
 ├── multi.py                   # Multi-agent coordination
@@ -54,7 +54,7 @@ AI-lab/
 - **Node.js 16+** (for frontend)
 - **Git LFS** (for large model files)
 - **NVIDIA GPU** (optional, for accelerated inference)
-- **Windows 10/11** (scripts optimized for Windows)
+- **Windows 10/11** or **Linux**
 
 ### Quick Start
 
@@ -82,12 +82,17 @@ AI-lab/
    ```
 
 4. **Configure GPU (Optional)**
-   ```powershell
-   # Run as Administrator
-   .\configure_gpu.ps1
-   # or for efficient model setup
-   .\setup_efficient_model.ps1
-   ```
+   - **Windows**
+     ```powershell
+     # Run as Administrator
+     .\configure_gpu.ps1
+     # or for efficient model setup
+     .\setup_efficient_model.ps1
+     ```
+   - **Linux**
+     ```bash
+     ./install.sh       # Installs Ollama and optional GPU drivers
+     ```
 
 5. **Launch the Application**
    ```bash
@@ -121,10 +126,15 @@ python backend/main.py
 cd frontend && npm start
 
 # Agent pipeline only
-python pipeline_graph.py
+python backend/ai_lab/pipeline_graph.py
 
 # Multi-agent example
 python multi.py
+```
+
+#### Option 3: Docker Compose
+```bash
+docker compose up --build
 ```
 
 ### Using the Web Interface
@@ -138,7 +148,7 @@ python multi.py
 
 ```bash
 # Interactive agent pipeline
-python pipeline_graph.py
+python backend/ai_lab/pipeline_graph.py
 
 # Multi-agent conversation
 python multi.py
@@ -312,11 +322,8 @@ python -m pytest backend/tests/
 # Frontend tests
 cd frontend && npm test
 
-# Agent tests
-python test_agents.py
-
-# Integration tests
-python test_integration.py
+# Basic environment test
+python test_setup.py
 ```
 
 ### Code Style
@@ -400,10 +407,6 @@ python test_integration.py
 - Update documentation for significant changes
 - Ensure backward compatibility
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - **Microsoft AutoGen**: For the conversational AI framework
@@ -432,7 +435,7 @@ pip install -r requirements.txt && .\LAUNCH.bat
 
 # Development
 python app.py              # Main application
-python pipeline_graph.py  # Agent pipeline CLI
+python backend/ai_lab/pipeline_graph.py  # Agent pipeline CLI
 python multi.py           # Multi-agent example
 python backend/main.py    # Backend API only
 
